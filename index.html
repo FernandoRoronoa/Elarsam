@@ -114,13 +114,8 @@ footer{padding:12px 20px;border-top:1px solid var(--line);color:var(--mute);font
 .povbtn{width:38px;height:38px;border-radius:8px;border:0;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;backdrop-filter:blur(4px);transition:opacity .2s,background .15s}
 .povbtn:hover{background:rgba(0,0,0,.85)}
 .povbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#fsToggle{opacity:0}
-.player:hover #fsToggle,#fsToggle:focus-visible{opacity:1}
-#fsToggle .i-exit{display:none}
-main.fs #fsToggle .i-enter{display:none}
-main.fs #fsToggle .i-exit{display:block}
-@media(hover:none){#fsToggle{opacity:1}}
-#fsChatOpen,#fsCollapse{display:none}
+#fsChatOpen,#fsCollapse,#fsExit{display:none}
+main.fs-pseudo #fsExit{display:grid}
 #fsChatOpen{opacity:.65}
 .player:hover #fsChatOpen,#fsChatOpen:focus-visible{opacity:1}
 main.fs.fs-nochat #fsChatOpen{display:grid}
@@ -158,9 +153,9 @@ nav{margin-left:0;width:100%}
 
 <main id="main">
   <section class="stage">
-    <div class="player" id="player"><iframe id="okplayer" title="Stream en directo" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+    <div class="player" id="player"><iframe id="okplayer" title="Stream en directo" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
       <div class="pov">
-        <button class="povbtn" id="fsToggle" type="button" title="Pantalla completa" aria-label="Pantalla completa"><svg class="i-enter" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg><svg class="i-exit" viewBox="0 0 24 24"><path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5"/></svg></button>
+        <button class="povbtn" id="fsExit" type="button" title="Salir de pantalla completa" aria-label="Salir de pantalla completa"><svg viewBox="0 0 24 24"><path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5"/></svg></button>
         <button class="povbtn" id="fsChatOpen" type="button" title="Mostrar chat" aria-label="Mostrar chat"><svg viewBox="0 0 24 24"><path d="M17 12H4M8 8l-4 4 4 4M20 5v14"/></svg></button>
       </div>
     </div>
@@ -377,7 +372,7 @@ const LINKS = {
   patreon: "https://www.patreon.com/cw/ElarSam",
   discord: "https://discord.com/invite/9RCZhxwUwd"
 };
-const STREAM_URL = "https://meshcast.io/view.html?geo=cn1&id=FernandoRoronoa"; // reproductor de VDO.Ninja.
+const STREAM_URL = "https://vdo.ninja/?view=rvdavvdzj"; // reproductor de VDO.Ninja.
 /* ========================= */
 
 const $ = id => document.getElementById(id);
@@ -601,12 +596,16 @@ document.addEventListener("visibilitychange", () => {
   else if (hiddenAt && Date.now() - hiddenAt > 5*60*1000 && !$("main").classList.contains("nochat")) loadChat(active, true);
 });
 
-/* ---------- Pantalla completa propia: reproductor + chat ---------- */
+/* ---------- Pantalla completa con chat ----------
+   El icono de pantalla completa del reproductor (abajo a la derecha) vive dentro del iframe.
+   Cuando se pulsa, el navegador avisa a esta página y aquí la cambiamos por la pantalla completa
+   de todo el bloque (video + chat), con la flecha para desplegar el chat. */
 (function(){
-  const main = $("main");
+  const main = $("main"), frame = $("okplayer");
   let chatOpen = false;
   try { chatOpen = localStorage.getItem("fschat") === "1"; } catch(e){}
   const nativeEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const inFs = () => main.classList.contains("fs");
 
   function setFsChat(open){
     chatOpen = open;
@@ -614,35 +613,45 @@ document.addEventListener("visibilitychange", () => {
     try { localStorage.setItem("fschat", open ? "1" : "0"); } catch(e){}
     if (open && !PLATFORMS[active].started) loadChat(active, true);
   }
-  function setFsLabel(t){ const b = $("fsToggle"); b.title = t; b.setAttribute("aria-label", t); }
   function enter(){
     main.classList.add("fs");
     document.documentElement.classList.add("fslock");
     main.classList.toggle("fs-nochat", !chatOpen);
     if (chatOpen && !PLATFORMS[active].started) loadChat(active, true);
-    const req = main.requestFullscreen || main.webkitRequestFullscreen;
-    if (req) { try { const r = req.call(main); if (r && r.catch) r.catch(() => {}); } catch(e){} }
-    setFsLabel("Salir de pantalla completa");
   }
   function leave(){
-    main.classList.remove("fs", "fs-nochat");
+    main.classList.remove("fs", "fs-nochat", "fs-pseudo");
     document.documentElement.classList.remove("fslock");
-    setFsLabel("Pantalla completa");
   }
   function exit(){
     const ex = document.exitFullscreen || document.webkitExitFullscreen;
     if (nativeEl() && ex) { try { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); } catch(e){} }
     leave();
   }
-  $("fsToggle").addEventListener("click", () => main.classList.contains("fs") ? exit() : enter());
-  $("fsChatOpen").addEventListener("click", () => setFsChat(true));
-  $("fsCollapse").addEventListener("click", () => setFsChat(false));
-  /* Esc o salir desde el navegador */
-  function onFsChange(){ if (!nativeEl() && main.classList.contains("fs")) leave(); }
+  /* El reproductor entró en pantalla completa por su cuenta: la cambiamos por la nuestra */
+  function takeOver(){
+    enter();
+    const req = main.requestFullscreen || main.webkitRequestFullscreen;
+    const fallback = () => {
+      /* El navegador no dejó: salimos de la del iframe y llenamos la ventana con video + chat */
+      const ex = document.exitFullscreen || document.webkitExitFullscreen;
+      main.classList.add("fs-pseudo");
+      if (nativeEl() && ex) { try { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); } catch(e){} }
+    };
+    if (!req) return fallback();
+    try { const r = req.call(main); if (r && r.catch) r.catch(fallback); } catch(e){ fallback(); }
+  }
+  function onFsChange(){
+    const fe = nativeEl();
+    if (fe === frame) { inFs() ? exit() : takeOver(); }       /* pulsó el icono del reproductor */
+    else if (!fe && inFs() && !main.classList.contains("fs-pseudo")) leave();  /* Esc */
+  }
   document.addEventListener("fullscreenchange", onFsChange);
   document.addEventListener("webkitfullscreenchange", onFsChange);
-  /* Si el navegador no tiene pantalla completa real (p. ej. iPhone), Esc también cierra el modo simulado */
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && main.classList.contains("fs") && !nativeEl()) leave(); });
+  $("fsChatOpen").addEventListener("click", () => setFsChat(true));
+  $("fsCollapse").addEventListener("click", () => setFsChat(false));
+  $("fsExit").addEventListener("click", exit);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && inFs() && !nativeEl()) leave(); });
 })();
 
 let startHidden = false;
