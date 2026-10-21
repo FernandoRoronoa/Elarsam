@@ -108,6 +108,43 @@ main.nochat aside{display:none}
 .showchat{display:none}
 main.nochat .showchat{display:inline-flex}
 footer{padding:12px 20px;border-top:1px solid var(--line);color:var(--mute);font-size:13px;text-align:center}
+/* ===== Pantalla completa propia (reproductor + chat) ===== */
+/* Zona transparente sobre el icono de pantalla completa del reproductor (abajo a la derecha).
+   Está a --fs-r del borde derecho y --fs-b del inferior; si en tu navegador no coincide, ajusta estos dos valores. */
+.player{--fs-r:53px;--fs-b:4px}
+.fshit{position:absolute;right:var(--fs-r);bottom:var(--fs-b);width:40px;height:40px;z-index:5;border:0;border-radius:50%;background:transparent;cursor:pointer;padding:0;display:grid;place-items:center;color:#fff;transition:background .15s}
+.fshit svg{width:20px;height:20px;fill:none;stroke:transparent;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fshit:hover,.fshit:focus-visible{background:rgba(0,0,0,.55)}
+.fshit:hover svg,.fshit:focus-visible svg{stroke:#fff}
+.fshit .i-x{display:none}
+main.fs .fshit .i-e{display:none}
+main.fs .fshit .i-x{display:block}
+.pov{position:absolute;top:10px;right:10px;z-index:5;display:flex;gap:8px;pointer-events:none}
+.pov>button{pointer-events:auto}
+.povbtn{width:38px;height:38px;border-radius:8px;border:0;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;backdrop-filter:blur(4px);transition:opacity .2s,background .15s}
+.povbtn:hover{background:rgba(0,0,0,.85)}
+.povbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#fsChatOpen,#fsCollapse,#fsExit{display:none}
+main.fs-pseudo #fsExit{display:grid}
+#fsChatOpen{opacity:.65}
+.player:hover #fsChatOpen,#fsChatOpen:focus-visible{opacity:1}
+main.fs.fs-nochat #fsChatOpen{display:grid}
+main.fs:not(.fs-nochat) #fsCollapse{display:grid}
+main.fs #btnHide{display:none}
+html.fslock,html.fslock body{overflow:hidden}
+main.fs{position:fixed;inset:0;z-index:9999;width:100%;height:100%;padding:0;gap:0;background:#000}
+main.fs:not(.fs-nochat){grid-template-columns:minmax(0,1fr) 360px}
+main.fs.fs-nochat{grid-template-columns:minmax(0,1fr)}
+main.fs .stage{gap:0;height:100%}
+main.fs .profile,main.fs .socials{display:none}
+main.fs .player{flex:1;min-height:0;aspect-ratio:auto;max-height:none;border:0;border-radius:0}
+main.fs aside{position:relative;top:0;height:100%;min-height:0;border-radius:0;border-width:0 0 0 1px}
+main.fs:not(.fs-nochat) aside{display:flex}
+main.fs.fs-nochat aside{display:none}
+@media(max-width:700px){
+main.fs:not(.fs-nochat){grid-template-columns:minmax(0,1fr)}
+main.fs:not(.fs-nochat) aside{position:absolute;top:0;right:0;bottom:0;width:min(360px,88vw);z-index:6}
+}
 @media(max-width:960px){
 main{grid-template-columns:1fr}
 aside{position:static;height:560px;min-height:0}
@@ -126,7 +163,13 @@ nav{margin-left:0;width:100%}
 
 <main id="main">
   <section class="stage">
-    <div class="player" id="player"><iframe id="okplayer" title="Stream en directo" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+    <div class="player" id="player"><iframe id="okplayer" title="Stream en directo" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+      <button class="fshit" id="fsHit" type="button" title="Pantalla completa" aria-label="Pantalla completa"><svg class="i-e" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg><svg class="i-x" viewBox="0 0 24 24"><path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5"/></svg></button>
+      <div class="pov">
+        <button class="povbtn" id="fsExit" type="button" title="Salir de pantalla completa" aria-label="Salir de pantalla completa"><svg viewBox="0 0 24 24"><path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5"/></svg></button>
+        <button class="povbtn" id="fsChatOpen" type="button" title="Mostrar chat" aria-label="Mostrar chat"><svg viewBox="0 0 24 24"><path d="M17 12H4M8 8l-4 4 4 4M20 5v14"/></svg></button>
+      </div>
+    </div>
     <div class="profile">
       <img class="avatar" id="avatar" alt="Foto de perfil de elarsam15" src="https://static-cdn.jtvnw.net/jtv_user_pictures/a7893047-0a64-43ae-a812-9cccc606d7f6-profile_image-300x300.png" onerror="this.onerror=null;this.removeAttribute('src')">
       <div class="pinfo"><h1>elarsam15 <a class="subbtn" id="lnkSub" href="https://www.twitch.tv/elarsam15" target="_blank" rel="noopener">Suscribirse</a></h1><p id="followers"></p></div>
@@ -145,6 +188,7 @@ nav{margin-left:0;width:100%}
 
   <aside id="chatPanel" aria-label="Chat del stream">
     <div class="chead">
+      <button class="ib" id="fsCollapse" type="button" title="Ocultar chat" aria-label="Ocultar chat"><svg viewBox="0 0 24 24"><path d="M4 12h12M12 8l4 4-4 4M20 5v14"/></svg></button>
       <strong><span id="cState">Chat</span></strong>
       <button class="ib" id="btnRefresh" type="button" title="Refrescar chat" aria-label="Refrescar chat"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></button>
       <button class="ib" id="btnPop" type="button" title="Abrir chat en ventana" aria-label="Abrir chat en ventana"><svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></button>
@@ -339,7 +383,8 @@ const LINKS = {
   patreon: "https://www.patreon.com/cw/ElarSam",
   discord: "https://discord.com/invite/9RCZhxwUwd"
 };
-const STREAM_URL = "https://meshcast.io/view.html?geo=cn1&id=FernandoRoronoa"; // reproductor de VDO.Ninja.
+const STREAM_URL = "https://meshcast.io/view.html?geo=cn1&id=FernandoRoronoa"; // reproductor de Meshcast.
+/* (antes: "https://vdo.ninja/?view=rvdavvdzj") */
 /* ========================= */
 
 const $ = id => document.getElementById(id);
@@ -562,6 +607,68 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) hiddenAt = Date.now();
   else if (hiddenAt && Date.now() - hiddenAt > 5*60*1000 && !$("main").classList.contains("nochat")) loadChat(active, true);
 });
+
+/* ---------- Pantalla completa con chat ----------
+   El icono nativo de pantalla completa vive dentro del iframe y, al pulsarlo, el navegador gasta el
+   permiso de clic: la página ya no podría pedir su propia pantalla completa. Por eso hay una zona
+   transparente (#fsHit) justo encima de ese icono: el clic llega a esta página y pide la pantalla
+   completa de todo el bloque (video + chat), con la flecha para desplegar el chat.
+   Si el reproductor entra en pantalla completa por otra vía (doble clic, tecla F), se usa el modo
+   de respaldo: el bloque llena la ventana. */
+(function(){
+  const main = $("main"), frame = $("okplayer");
+  let chatOpen = false;
+  try { chatOpen = localStorage.getItem("fschat") === "1"; } catch(e){}
+  const nativeEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const inFs = () => main.classList.contains("fs");
+
+  function setFsChat(open){
+    chatOpen = open;
+    main.classList.toggle("fs-nochat", !open);
+    try { localStorage.setItem("fschat", open ? "1" : "0"); } catch(e){}
+    if (open && !PLATFORMS[active].started) loadChat(active, true);
+  }
+  function enter(){
+    main.classList.add("fs");
+    document.documentElement.classList.add("fslock");
+    main.classList.toggle("fs-nochat", !chatOpen);
+    if (chatOpen && !PLATFORMS[active].started) loadChat(active, true);
+  }
+  function leave(){
+    main.classList.remove("fs", "fs-nochat", "fs-pseudo");
+    document.documentElement.classList.remove("fslock");
+  }
+  function exit(){
+    const ex = document.exitFullscreen || document.webkitExitFullscreen;
+    if (nativeEl() && ex) { try { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); } catch(e){} }
+    leave();
+  }
+  /* El reproductor entró en pantalla completa por su cuenta: la cambiamos por la nuestra */
+  function takeOver(){
+    enter();
+    const req = main.requestFullscreen || main.webkitRequestFullscreen;
+    const fallback = () => {
+      /* El navegador no dejó: salimos de la del iframe y llenamos la ventana con video + chat */
+      const ex = document.exitFullscreen || document.webkitExitFullscreen;
+      main.classList.add("fs-pseudo");
+      if (nativeEl() && ex) { try { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); } catch(e){} }
+    };
+    if (!req) return fallback();
+    try { const r = req.call(main); if (r && r.catch) r.catch(fallback); } catch(e){ fallback(); }
+  }
+  function onFsChange(){
+    const fe = nativeEl();
+    if (fe === frame) { inFs() ? exit() : takeOver(); }       /* pulsó el icono del reproductor */
+    else if (!fe && inFs() && !main.classList.contains("fs-pseudo")) leave();  /* Esc */
+  }
+  document.addEventListener("fullscreenchange", onFsChange);
+  document.addEventListener("webkitfullscreenchange", onFsChange);
+  $("fsHit").addEventListener("click", () => inFs() ? exit() : takeOver());
+  $("fsChatOpen").addEventListener("click", () => setFsChat(true));
+  $("fsCollapse").addEventListener("click", () => setFsChat(false));
+  $("fsExit").addEventListener("click", exit);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && inFs() && !nativeEl()) leave(); });
+})();
 
 let startHidden = false;
 try { startHidden = localStorage.getItem("chat") === "0"; } catch(e){}
