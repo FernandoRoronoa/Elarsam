@@ -21,8 +21,7 @@ nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
 nav a{padding:7px 14px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);font-size:14px;font-weight:600;transition:background .15s,border-color .15s}
 nav a:hover{border-color:var(--accent);background:#2a2540}
 nav a.patreon:hover{border-color:#ff424d}
-main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px;padding:12px;min-height:0}
-main.nochat{grid-template-columns:minmax(0,1fr)}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:12px;padding:12px;min-height:0}
 .stage{display:flex;flex-direction:column;gap:10px;min-width:0}
 .player{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9;width:100%;max-height:calc(100vh - 170px);border:1px solid var(--line)}
 .player #tw,.player iframe,.player video{position:absolute;inset:0;width:100%;height:100%;border:0}
@@ -54,7 +53,8 @@ main.nochat{grid-template-columns:minmax(0,1fr)}
 .soc.patreon{background:#ff424d;color:#fff;background:linear-gradient(135deg,#f96854,#ff424d)}
 .soc.discord{background:#5865f2;color:#fff}
 .qnote{font-size:12px;color:var(--mute)}
-aside{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-height:480px;height:calc(100vh - 80px);position:sticky;top:12px}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0;align-self:start;position:sticky;top:12px}
+aside{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-height:360px;height:calc(100vh - 336px)}
 main.nochat aside{display:none}
 .chead{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
 .chead strong{flex:1;font-size:14px;display:flex;align-items:center;gap:8px}
@@ -114,10 +114,13 @@ main.nochat aside{display:none}
 .chatToggle .a-show{display:none}
 main.nochat .chatToggle .a-hide{display:none}
 main.nochat .chatToggle .a-show{display:block}
+.twitchbox{position:relative;width:100%;height:300px;flex:none;background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.twitchbox iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 footer{padding:12px 20px;border-top:1px solid var(--line);color:var(--mute);font-size:13px;text-align:center}
 @media(max-width:960px){
 main{grid-template-columns:1fr}
-aside{position:static;height:560px;min-height:0}
+.side{position:static}
+aside{height:560px;min-height:0}
 .player{max-height:none}
 nav{margin-left:0;width:100%}
 }
@@ -153,6 +156,8 @@ nav{margin-left:0;width:100%}
     </div>
   </section>
 
+  <div class="side">
+    <div class="twitchbox"><iframe id="twPlayer" title="Twitch" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen scrolling="no"></iframe></div>
   <aside id="chatPanel" aria-label="Chat del stream">
     <div class="chead">
       <strong><span id="cState">Chat</span></strong>
@@ -188,6 +193,7 @@ nav{margin-left:0;width:100%}
       <button type="button" id="btnLogin">Iniciar sesión</button>
     </div>
   </aside>
+  </div>
 </main>
 
 <footer>© elarsam15</footer>
@@ -349,7 +355,7 @@ const LINKS = {
   patreon: "https://www.patreon.com/cw/ElarSam",
   discord: "https://discord.com/invite/9RCZhxwUwd"
 };
-const STREAM_URL = "https://meshcast.io/view.html?geo=cn1&id=FernandoRoronoa"; // reproductor de VDO.Ninja.
+const STREAM_URL = "https://vdo.ninja/?view=rvdavvdzj"; // reproductor de VDO.Ninja.
 /* ========================= */
 
 const $ = id => document.getElementById(id);
@@ -357,7 +363,7 @@ const PARENT = location.hostname || "localhost";
 
 $("followers").textContent = FOLLOWERS;
 $("followers").hidden = !FOLLOWERS;
-$("lnkSub").href = "https://www.twitch.tv/elarsam15";
+$("lnkSub").href = "https://www.twitch.tv/" + CHANNEL;
 if (AVATAR_URL) $("avatar").src = AVATAR_URL;
 $("lnkTwitch").href = "https://www.twitch.tv/" + CHANNEL;
 $("lnkKick").href = "https://kick.com/" + KICK_CHANNEL;
@@ -368,6 +374,9 @@ $("lnkDiscord").href = LINKS.discord;
 /* ---------- Reproductor (ok.ru) ---------- */
 $("okplayer").src = STREAM_URL;
 (function(){ const t = $("liveTag"); t.textContent = "Baja latencia"; t.classList.remove("on"); })();
+
+/* ---------- Reproductor de Twitch (visible, suma espectadores) ---------- */
+$("twPlayer").src = "https://player.twitch.tv/?channel=" + encodeURIComponent(CHANNEL) + "&parent=" + encodeURIComponent(PARENT) + "&autoplay=true&muted=true";
 
 /* ---------- Chat (Twitch + Kick) ---------- */
 const PLATFORMS = {
